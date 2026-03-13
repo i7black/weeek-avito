@@ -13,14 +13,28 @@ function optional(key: string, fallback: string): string {
     return process.env[key] || fallback;
 }
 
+function warnIfMissing(key: string): string {
+    const value = process.env[key];
+    if (!value) {
+        console.warn(`[Config] WARNING: ${key} not set. Avito integration will be disabled.`);
+        return '';
+    }
+    return value;
+}
+
+const avitoClientId = warnIfMissing('AVITO_CLIENT_ID');
+const avitoClientSecret = warnIfMissing('AVITO_CLIENT_SECRET');
+const avitoUserId = warnIfMissing('AVITO_USER_ID');
+
 export const config = {
-    // Авито
+    // Авито (опционально — сервис запустится без них)
     avito: {
-        clientId: required('AVITO_CLIENT_ID'),
-        clientSecret: required('AVITO_CLIENT_SECRET'),
-        userId: required('AVITO_USER_ID'),
+        clientId: avitoClientId,
+        clientSecret: avitoClientSecret,
+        userId: avitoUserId,
         tokenUrl: 'https://api.avito.ru/token',
         baseUrl: 'https://api.avito.ru',
+        isConfigured: Boolean(avitoClientId && avitoClientSecret && avitoUserId),
     },
 
     // Weeek
@@ -49,3 +63,4 @@ export const config = {
         callsIntervalMs: parseInt(optional('CALLS_POLL_INTERVAL_MS', '300000')),
     },
 } as const;
+

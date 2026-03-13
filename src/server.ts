@@ -100,15 +100,26 @@ async function start() {
 
     // ─── API: health check ───
     app.get('/api/health', async () => {
-        return { status: 'ok', uptime: process.uptime() };
+        return {
+            status: 'ok',
+            uptime: process.uptime(),
+            avito: config.avito.isConfigured ? 'connected' : 'NOT CONFIGURED — add AVITO_CLIENT_ID, AVITO_CLIENT_SECRET, AVITO_USER_ID',
+            weeek: 'connected',
+        };
     });
 
     // ─── Инициализация ───
     await initDb();
     console.log('[Server] БД инициализирована');
 
-    // Запускаем поллер звонков
-    startCallsPoller();
+    // Запускаем поллер звонков только если Авито настроен
+    if (config.avito.isConfigured) {
+        startCallsPoller();
+        console.log('[Server] Avito подключен, поллер звонков запущен');
+    } else {
+        console.warn('[Server] Avito НЕ настроен — webhook и поллер звонков отключены');
+        console.warn('[Server] Добавьте AVITO_CLIENT_ID, AVITO_CLIENT_SECRET, AVITO_USER_ID в переменные окружения');
+    }
 
     // Старт сервера
     await app.listen({ port: config.server.port, host: config.server.host });

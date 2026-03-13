@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авито ↔ Weeek — Панель чатов</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface-2: #242836;
+            --border: #2d3141;
+            --text: #e4e6ec;
+            --text-dim: #8b8fa3;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --green: #22c55e;
+            --orange: #f59e0b;
+            --red: #ef4444;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 360px;
+            min-width: 360px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-header .status {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .chat-item {
+            padding: 14px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .chat-item:hover {
+            background: var(--surface-2);
+        }
+
+        .chat-item.active {
+            background: var(--accent-glow);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .chat-item .name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-item .preview {
+            font-size: 12px;
+            color: var(--text-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-item .time {
+            font-size: 11px;
+            color: var(--text-dim);
+            float: right;
+        }
+
+        /* ── Main Area ── */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .main-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .main-header .badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            background: var(--accent-glow);
+            color: var(--accent);
+            border-radius: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        /* ── Messages ── */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.incoming {
+            align-self: flex-start;
+            background: var(--surface-2);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.outgoing {
+            align-self: flex-end;
+            background: var(--accent);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message .meta {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        .message.outgoing .meta {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ── Reply Area ── */
+        .reply-area {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .reply-area textarea {
+            flex: 1;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .reply-area textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .reply-area button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .reply-area button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .reply-area button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ── Empty State ── */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-dim);
+            gap: 12px;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            opacity: 0.3;
+        }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: var(--green);
+            color: white;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background: var(--red);
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-dim);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="status"></div>
+            <h1>Авито ↔ Weeek</h1>
+        </div>
+        <div class="chat-list" id="chatList">
+            <div class="empty-state">
+                <div class="icon">💬</div>
+                <div>Загрузка чатов...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="main-header" id="mainHeader">
+            <h2>Выберите чат</h2>
+        </div>
+        <div class="messages" id="messages">
+            <div class="empty-state">
+                <div class="icon">📨</div>
+                <div>Выберите чат слева для просмотра сообщений</div>
+            </div>
+        </div>
+        <div class="reply-area" id="replyArea" style="display: none;">
+            <textarea id="replyText" placeholder="Введите ответ..." rows="1"></textarea>
+            <button id="sendBtn" onclick="sendReply()">Отправить</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentChatId = null;
+        let refreshInterval = null;
+
+        // ── Загрузка чатов ──
+        async function loadChats() {
+            try {
+                const resp = await fetch('/api/chats');
+                const data = await resp.json();
+                renderChats(data.chats || []);
+            } catch (err) {
+                document.getElementById('chatList').innerHTML = `
+          <div class="empty-state">
+            <div class="icon">⚠️</div>
+            <div>Ошибка загрузки чатов</div>
+          </div>`;
+            }
+        }
+
+        function renderChats(chats) {
+            const list = document.getElementById('chatList');
+            if (!chats.length) {
+                list.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">💬</div>
+            <div>Нет активных чатов</div>
+          </div>`;
+                return;
+            }
+            list.innerHTML = chats.map(c => `
+        <div class="chat-item ${c.avito_chat_id === currentChatId ? 'active' : ''}"
+             onclick="selectChat('${c.avito_chat_id}', '${escape(c.buyer_name || 'Покупатель')}', '${c.item_id || ''}')">
+          <span class="time">${formatDate(c.updated_at)}</span>
+          <div class="name">👤 ${c.buyer_name || 'Покупатель'}</div>
+          <div class="preview">📦 #${c.item_id || 'N/A'} · Задача Weeek #${c.weeek_task_id}</div>
+        </div>
+      `).join('');
+        }
+
+        // ── Выбор чата ──
+        async function selectChat(chatId, buyerName, itemId) {
+            currentChatId = chatId;
+            document.getElementById('mainHeader').innerHTML = `
+        <h2>👤 ${unescape(buyerName)}</h2>
+        <span class="badge">Чат: ${chatId.slice(0, 8)}... · Объявление #${itemId || 'N/A'}</span>`;
+            document.getElementById('replyArea').style.display = 'flex';
+
+            // Подсветка активного
+            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            await loadMessages(chatId);
+
+            // Автообновление сообщений
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(() => loadMessages(chatId), 10000);
+        }
+
+        // ── Загрузка сообщений ──
+        async function loadMessages(chatId) {
+            try {
+                const resp = await fetch(`/api/chats/${chatId}/messages`);
+                const data = await resp.json();
+                renderMessages(data.avito || [], data.replies || []);
+            } catch (err) {
+                document.getElementById('messages').innerHTML = `
+          <div class="empty-state">
+            <div class="icon">⚠️</div>
+            <div>Ошибка загрузки сообщений</div>
+          </div>`;
+            }
+        }
+
+        function renderMessages(avitoMsgs, replies) {
+            const container = document.getElementById('messages');
+
+            // Объединяем и сортируем по времени
+            const all = [];
+
+            avitoMsgs.forEach(m => {
+                all.push({
+                    text: m.content?.text || `[${m.type || 'медиа'}]`,
+                    time: new Date(m.created * 1000),
+                    type: m.direction === 'out' ? 'outgoing' : 'incoming',
+                    author: m.direction === 'out' ? 'Вы' : `#${m.author_id}`,
+                });
+            });
+
+            replies.forEach(r => {
+                all.push({
+                    text: r.message_text,
+                    time: new Date(r.sent_at),
+                    type: 'outgoing',
+                    author: r.sent_by || 'Вы (через панель)',
+                });
+            });
+
+            all.sort((a, b) => a.time - b.time);
+
+            if (!all.length) {
+                container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📭</div>
+            <div>Сообщений пока нет</div>
+          </div>`;
+                return;
+            }
+
+            container.innerHTML = all.map(m => `
+        <div class="message ${m.type}">
+          ${m.text}
+          <div class="meta">${m.author} · ${m.time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>
+      `).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ── Отправка ответа ──
+        async function sendReply() {
+            const textarea = document.getElementById('replyText');
+            const btn = document.getElementById('sendBtn');
+            const text = textarea.value.trim();
+
+            if (!text || !currentChatId) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Отправка...';
+
+            try {
+                const resp = await fetch(`/api/chats/${currentChatId}/reply`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text }),
+                });
+
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.error || 'Ошибка отправки');
+                }
+
+                textarea.value = '';
+                showToast('✅ Ответ отправлен');
+                await loadMessages(currentChatId);
+            } catch (err) {
+                showToast('❌ ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Отправить';
+            }
+        }
+
+        // ── Enter для отправки ──
+        document.getElementById('replyText').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendReply();
+            }
+        });
+
+        // ── Toast ──
+        function showToast(text, type = 'success') {
+            const el = document.getElementById('toast');
+            el.textContent = text;
+            el.className = `toast show ${type}`;
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        // ── Utils ──
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            const now = new Date();
+            if (d.toDateString() === now.toDateString()) {
+                return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            }
+            return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+        }
+
+        // ── Init ──
+        loadChats();
+        setInterval(loadChats, 30000);
+    </script>
+</body>
+
+</html>
